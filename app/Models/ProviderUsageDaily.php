@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $api_key_id
- * @property Carbon $date
+ * @property string $date  Y-m-d (UTC)
  * @property int $generations
  * @property int $input_text_tokens
  * @property int $input_image_tokens
@@ -34,7 +34,8 @@ class ProviderUsageDaily extends Model
     protected function casts(): array
     {
         return [
-            'date' => 'date',
+            // 'date' stays a plain 'Y-m-d' string: a date cast would store
+            // '… 00:00:00' and break the UNIQUE(api_key_id, date) upsert lookups.
             'cost_nano' => 'integer',
             'synced_at' => 'datetime',
         ];

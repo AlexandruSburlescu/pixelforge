@@ -12,7 +12,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\RateLimiter;
+use App\Services\Pixelforge\RequestBudget;
 use Throwable;
 
 /**
@@ -140,16 +140,14 @@ class PumpGenerationQueue implements ShouldBeUniqueUntilProcessing, ShouldQueue
         return max(($retryAfterSeconds ?? 0) * 1_000, $exponential) + random_int(0, 1_000);
     }
 
-    /** Our own per-minute budget, shared with polling, so we rarely see a 429. */
+    /** Out of request budget this minute: come back when it refills. */
     private function takeRequestSlot(): bool
     {
-        $key = 'pixelforge:requests';
-
-        if (RateLimiter::attempt($key, (int) config('pixelforge.max_per_minute'), fn () => true, 60)) {
+        if (RequestBudget::take()) {
             return true;
         }
 
-        self::dispatch()->delay(now()->addSeconds(max(1, RateLimiter::availableIn($key))));
+        self::dispatch()->delay(now()->addSeconds(RequestBudget::secondsUntilAvailable()));
 
         return false;
     }
