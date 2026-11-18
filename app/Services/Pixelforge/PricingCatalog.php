@@ -2,8 +2,10 @@
 
 namespace App\Services\Pixelforge;
 
+use App\Models\ApiKey;
 use App\Services\Pricing\PricingTable;
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Http\Client\Factory as Http;
 use Throwable;
 
 /**
@@ -20,6 +22,7 @@ class PricingCatalog
     public function __construct(
         private readonly Cache $cache,
         private readonly PixelforgeClientFactory $clients,
+        private readonly Http $http,
     ) {}
 
     public function current(): PricingTable
@@ -28,7 +31,11 @@ class PricingCatalog
 
         if (! is_array($body)) {
             try {
-                $body = $this->clients->make()->pricing();
+                // GET /v1/pricing needs no key: use the logged client when one exists,
+                // a plain request otherwise, so quotes work before a key is set up.
+                $body = ApiKey::current()
+                    ? $this->clients->make()->pricing()
+                    : $this->http->baseUrl((string) config('pixelforge.base_url'))->acceptJson()->timeout(10)->get('/pricing')->throw()->json();
                 $this->cache->put(self::FRESH_KEY, $body, now()->addMinutes(10));
                 $this->cache->forever(self::LAST_GOOD_KEY, $body);
             } catch (Throwable $e) {

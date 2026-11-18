@@ -14,7 +14,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use MoonShine\ColorManager\Palettes\OrangePalette;
+use MoonShine\ColorManager\Palettes\NeutralPalette;
 use MoonShine\Crud\Forms\FiltersForm;
 use MoonShine\Crud\Forms\LoginForm;
 use MoonShine\Laravel\Exceptions\MoonShineNotFoundException;
@@ -25,9 +25,9 @@ use MoonShine\Laravel\Pages\LoginPage;
 use MoonShine\Laravel\Pages\ProfilePage;
 
 return [
-    'title' => env('MOONSHINE_TITLE', 'MoonShine'),
-    'logo' => '/vendor/moonshine/logo-small.svg',
-    'logo_small' => '/vendor/moonshine/logo-small.svg',
+    'title' => env('MOONSHINE_TITLE', 'Pixelforge Admin'),
+    'logo' => '/favicon.svg',
+    'logo_small' => '/favicon.svg',
 
     'favicons' => [
         'apple-touch' => '/vendor/moonshine/apple-touch-icon.png',
@@ -93,7 +93,7 @@ return [
 
     // Layout, palette, pages, forms
     'layout' => MoonShineLayout::class,
-    'palette' => OrangePalette::class,
+    'palette' => NeutralPalette::class,
 
     'forms' => [
         'login' => LoginForm::class,

@@ -119,6 +119,9 @@ export function mount(canvas: HTMLCanvasElement, accent: string): () => void {
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
+        // Wide screens: keep the picture to the right of the headline, not under it.
+        points.position.x = camera.aspect > 1.3 ? Math.min(3.4, camera.aspect * 1.6) : 0;
+        canvas.style.opacity = camera.aspect > 1.3 ? '' : '0.45';
     };
 
     let frame = 0;
