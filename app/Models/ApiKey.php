@@ -38,7 +38,14 @@ class ApiKey extends Model
     protected static function booted(): void
     {
         static::saving(function (self $key) {
-            if ($key->isDirty('secret')) {
+            // Secrets are write-only in the admin: an empty value means "keep the current one".
+            foreach (['secret', 'webhook_secret'] as $field) {
+                if ($key->exists && $key->isDirty($field) && blank($key->{$field})) {
+                    $key->{$field} = $key->getOriginal($field);
+                }
+            }
+
+            if ($key->isDirty('secret') && filled($key->secret)) {
                 $key->hint = '…'.substr($key->secret, -4);
             }
         });
