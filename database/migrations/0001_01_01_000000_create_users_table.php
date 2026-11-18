@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->foreignId('user_type_id')->default(1)->index()->constrained('user_types')->restrictOnDelete();
+            // Spendable credit in nano-USD (1 USD = 1e9). Cached sum of credit_ledger,
+            // only ever changed inside the same transaction as a ledger row.
+            $table->bigInteger('balance_nano')->default(0);
             $table->rememberToken();
             $table->timestamps();
         });
