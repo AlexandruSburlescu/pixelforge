@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { router } from '@inertiajs/vue3';
+import { Loader2, RotateCcw } from '@lucide/vue';
 import { computed, ref } from 'vue';
 import StatusBadge from '@/components/generation/StatusBadge.vue';
+import { retry as retryRoute } from '@/routes/generations';
 import type { Generation } from '@/types/generation';
 
 const props = defineProps<{ generation: Generation; compact?: boolean }>();
@@ -15,6 +18,16 @@ const aspect = computed(() => {
 });
 
 const busy = computed(() => ['pending', 'queued', 'processing'].includes(g.value.status));
+
+const retrying = ref(false);
+
+function tryAgain() {
+    retrying.value = true;
+    router.post(retryRoute(g.value.id).url, {}, {
+        preserveScroll: true,
+        onFinish: () => (retrying.value = false),
+    });
+}
 </script>
 
 <template>
@@ -70,9 +83,21 @@ const busy = computed(() => ['pending', 'queued', 'processing'].includes(g.value
                 </template>
             </dl>
 
-            <p v-if="g.error" class="rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
-                {{ g.error }}
-            </p>
+            <div v-if="g.error" class="space-y-2 rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive">
+                <p>{{ g.error }}</p>
+                <button
+                    v-if="g.can_retry"
+                    type="button"
+                    :disabled="retrying"
+                    class="inline-flex items-center gap-1.5 rounded border border-current/30 px-2 py-1 font-medium text-foreground transition-colors hover:border-ember hover:text-ember disabled:opacity-60"
+                    :aria-label="`Try again: ${g.prompt}`"
+                    @click="tryAgain"
+                >
+                    <Loader2 v-if="retrying" class="size-3 animate-spin" />
+                    <RotateCcw v-else class="size-3" />
+                    Try again<span v-if="!compact" class="font-normal text-muted-foreground"> · same settings, priced again</span>
+                </button>
+            </div>
 
             <details v-if="g.tokens && !compact" class="text-[11px] text-muted-foreground">
                 <summary class="cursor-pointer select-none">Token usage</summary>

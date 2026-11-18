@@ -24,6 +24,7 @@ export type Generation = {
     } | null;
     image: string | null;
     error: string | null;
+    can_retry: boolean;
     created_at: string;
     completed_at: string | null;
 };

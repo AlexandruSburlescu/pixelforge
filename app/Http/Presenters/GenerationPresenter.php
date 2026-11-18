@@ -4,6 +4,7 @@ namespace App\Http\Presenters;
 
 use App\Enums\GenerationStatus;
 use App\Models\Generation;
+use App\Services\Generations\GenerationService;
 use App\Support\Money;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,8 +14,46 @@ use Illuminate\Support\Facades\Storage;
  */
 final class GenerationPresenter
 {
-    /** @return array<string, mixed> */
-    public static function present(Generation $g): array
+    /**
+     * Ids of the given failed generations that already have a retry, in one query
+     * (a retry's idempotency key is "retry:<failed id>").
+     *
+     * @param  iterable<Generation>  $generations
+     * @return array<string, true>
+     */
+    public static function retriedIds(iterable $generations): array
+    {
+        $keys = collect($generations)
+            ->filter(fn (Generation $g) => $g->status === GenerationStatus::Failed)
+            ->map(fn (Generation $g) => 'retry:'.$g->id)
+            ->values();
+
+        if ($keys->isEmpty()) {
+            return [];
+        }
+
+        return Generation::whereIn('idempotency_key', $keys)
+            ->pluck('idempotency_key')
+            ->mapWithKeys(fn (string $key) => [substr($key, 6) => true])
+            ->all();
+    }
+
+    /**
+     * @param  iterable<Generation>  $generations
+     * @return list<array<string, mixed>>
+     */
+    public static function many(iterable $generations): array
+    {
+        $retried = self::retriedIds($generations);
+
+        return collect($generations)->map(fn (Generation $g) => self::present($g, $retried))->values()->all();
+    }
+
+    /**
+     * @param  array<string, true>  $retried  from retriedIds()
+     * @return array<string, mixed>
+     */
+    public static function present(Generation $g, array $retried = []): array
     {
         return [
             'id' => $g->id,
@@ -42,6 +81,7 @@ final class GenerationPresenter
             ] : null,
             'image' => self::imageUrl($g),
             'error' => $g->status === GenerationStatus::Failed ? $g->error_message : null,
+            'can_retry' => GenerationService::canRetry($g) && ! isset($retried[$g->id]),
             'created_at' => $g->created_at->toIso8601String(),
             'completed_at' => $g->completed_at?->toIso8601String(),
         ];

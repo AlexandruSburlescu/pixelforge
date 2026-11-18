@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\GenerationStatus;
 use App\Http\Presenters\GenerationPresenter;
 use App\Http\Requests\StoreGenerationRequest;
+use App\Models\Generation;
 use App\Services\Credits\InsufficientCredits;
 use App\Services\Generations\GenerationService;
 use App\Services\Pixelforge\PricingCatalog;
@@ -29,8 +30,7 @@ class GenerationController extends Controller
         return Inertia::render('Generate', [
             'pricing' => $pricing,
             'markupBps' => (int) config('pixelforge.markup_bps'),
-            'recent' => $request->user()->generations()->latest()->limit(6)->get()
-                ->map(GenerationPresenter::present(...)),
+            'recent' => GenerationPresenter::many($request->user()->generations()->latest()->limit(6)->get()),
         ]);
     }
 
@@ -54,12 +54,31 @@ class GenerationController extends Controller
         return to_route('generations.create');
     }
 
+    public function retry(Request $request, Generation $generation, GenerationService $service): RedirectResponse
+    {
+        try {
+            $new = $service->retry($request->user(), $generation);
+        } catch (InsufficientCredits $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back();
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => 'Trying again. Up to '.Money::format($new->hold_nano).' is on hold until it finishes.',
+        ]);
+
+        return back();
+    }
+
     public function index(Request $request): Response
     {
         $page = $request->user()->generations()->latest()->cursorPaginate(24);
+        $retried = GenerationPresenter::retriedIds($page->items());
 
         return Inertia::render('History', [
-            'generations' => $page->through(GenerationPresenter::present(...)),
+            'generations' => $page->through(fn (Generation $g) => GenerationPresenter::present($g, $retried)),
         ]);
     }
 
@@ -71,7 +90,7 @@ class GenerationController extends Controller
         $rows = $request->user()->generations()->whereKey($ids)->get();
 
         return response()->json([
-            'generations' => $rows->map(GenerationPresenter::present(...))->values(),
+            'generations' => GenerationPresenter::many($rows),
             'balance' => Money::format($request->user()->fresh()->balance_nano),
             'in_flight' => $request->user()->generations()->whereIn('status', GenerationStatus::inFlight())->count(),
         ]);

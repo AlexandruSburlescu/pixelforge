@@ -72,6 +72,32 @@ class GenerationService
         return $generation;
     }
 
+    /** Failures where trying the same request again can't help. */
+    public const NOT_RETRYABLE = ['content_policy_violation', 'validation_failed'];
+
+    public static function canRetry(Generation $generation): bool
+    {
+        return $generation->status === GenerationStatus::Failed
+            && ! in_array($generation->error_code, self::NOT_RETRYABLE, true);
+    }
+
+    /**
+     * "Try again" on a failed generation: a new generation with the same settings,
+     * priced and held afresh. The key is derived from the failed one, so a double
+     * click retries once.
+     */
+    public function retry(User $user, Generation $failed): Generation
+    {
+        abort_unless($failed->user_id === $user->id && self::canRetry($failed), 404);
+
+        return $this->create($user, [
+            'prompt' => $failed->prompt,
+            'size' => $failed->size,
+            'quality' => $failed->quality,
+            'reference_images' => $failed->reference_images,
+        ], 'retry:'.$failed->id);
+    }
+
     private function find(User $user, string $idempotencyKey): ?Generation
     {
         return Generation::where('user_id', $user->id)->where('idempotency_key', $idempotencyKey)->first();

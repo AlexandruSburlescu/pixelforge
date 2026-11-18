@@ -187,6 +187,42 @@ class GenerationFlowTest extends TestCase
         $this->assertSame(Money::nanoFromUsd('5.00'), $user->fresh()->balance_nano);
     }
 
+    public function test_a_failed_generation_can_be_retried_once_with_the_same_settings(): void
+    {
+        $this->fakeCreateReturns(202, []);
+        $user = $this->userWithCredits('5.00');
+        $this->actingAs($user)->post('/generations', $this->generationInput(['quality' => 'low', 'prompt' => 'retry me']));
+        $failed = Generation::sole();
+        app(GenerationUpdater::class)->apply($failed, $this->providerGeneration($failed->provider_id, 'failed', $failed->id, [
+            'error' => ['code' => 'internal_error', 'message' => 'Something went wrong on our side.'],
+        ]));
+
+        $this->actingAs($user)->post("/generations/{$failed->id}/retry")->assertRedirect();
+        $this->actingAs($user)->post("/generations/{$failed->id}/retry")->assertRedirect(); // double click
+
+        $this->assertSame(2, Generation::count());
+        $retry = Generation::where('idempotency_key', 'retry:'.$failed->id)->sole();
+        $this->assertSame(['retry me', 'low'], [$retry->prompt, $retry->quality]);
+        $this->assertNotSame(GenerationStatus::Failed, $retry->status);
+
+        // The failed card no longer offers "Try again".
+        $this->actingAs($user)->get('/history')->assertInertia(fn ($page) => $page
+            ->where('generations.data.1.id', $failed->id)
+            ->where('generations.data.1.can_retry', false));
+    }
+
+    public function test_content_policy_failures_and_other_users_rows_cannot_be_retried(): void
+    {
+        $this->fakeCreateReturns(400, ['error' => ['type' => 'invalid_request_error', 'code' => 'content_policy_violation', 'message' => 'Rejected']]);
+        $user = $this->userWithCredits('5.00');
+        $this->actingAs($user)->post('/generations', $this->generationInput(['prompt' => 'x [blocked]']));
+        $blocked = Generation::sole();
+
+        $this->actingAs($user)->post("/generations/{$blocked->id}/retry")->assertNotFound();
+        $this->actingAs($this->userWithCredits())->post("/generations/{$blocked->id}/retry")->assertNotFound();
+        $this->assertSame(1, Generation::count());
+    }
+
     public function test_validation_mirrors_pixelforge(): void
     {
         $this->fakeCreateReturns(202, []);
