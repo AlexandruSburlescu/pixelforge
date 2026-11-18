@@ -46,7 +46,7 @@ class ReconcileTest extends TestCase
         $this->actingAs($user)->post('/generations', $this->generationInput());
 
         // Nothing for a while: no webhook ever arrives.
-        $this->travel(ReconcileGenerations::STALE_AFTER_MINUTES + 1)->minutes();
+        $this->travel(ReconcileGenerations::staleAfterSeconds() + 60)->seconds();
         ReconcileGenerations::dispatchSync();
 
         $generation = Generation::sole();

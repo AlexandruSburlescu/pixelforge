@@ -24,7 +24,11 @@ class ReconcileGenerations implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 120;
 
-    public const STALE_AFTER_MINUTES = 3;
+    /** Seconds without news before we poll (config pixelforge.reconcile_after_seconds, default 180). */
+    public static function staleAfterSeconds(): int
+    {
+        return max(10, (int) config('pixelforge.reconcile_after_seconds', 180));
+    }
 
     public const BATCH = 20;
 
@@ -33,7 +37,7 @@ class ReconcileGenerations implements ShouldBeUnique, ShouldQueue
         $stale = Generation::with('apiKey')
             ->whereIn('status', [GenerationStatus::Queued, GenerationStatus::Processing])
             ->whereNotNull('provider_id')
-            ->where('updated_at', '<', now()->subMinutes(self::STALE_AFTER_MINUTES))
+            ->where('updated_at', '<', now()->subSeconds(self::staleAfterSeconds()))
             ->orderBy('updated_at')
             ->limit(self::BATCH)
             ->get();

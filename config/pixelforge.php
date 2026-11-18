@@ -20,6 +20,9 @@ return [
     'max_concurrent' => (int) env('PIXELFORGE_MAX_CONCURRENT', 3),
     'max_per_minute' => (int) env('PIXELFORGE_MAX_PER_MINUTE', 55), // a little under 60 for polling headroom
 
+    // Poll an in-flight generation after this long without a webhook.
+    'reconcile_after_seconds' => (int) env('PIXELFORGE_RECONCILE_AFTER_SECONDS', 180),
+
     'webhook_tolerance_seconds' => 300,
     'http_timeout_seconds' => 15,
     'log_retention_days' => (int) env('PIXELFORGE_LOG_RETENTION_DAYS', 14),
