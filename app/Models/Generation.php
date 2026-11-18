@@ -41,6 +41,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $error_code
  * @property string|null $error_message
  * @property int $submit_attempts
+ * @property Carbon|null $next_attempt_at
  * @property Carbon|null $submitted_at
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
@@ -73,6 +74,7 @@ class Generation extends Model
             'submitted_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'next_attempt_at' => 'datetime',
         ];
     }
 

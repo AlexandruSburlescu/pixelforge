@@ -50,6 +50,7 @@ return new class extends Migration
             $table->string('error_code', 48)->nullable();
             $table->string('error_message', 500)->nullable();
             $table->unsignedSmallInteger('submit_attempts')->default(0);
+            $table->timestamp('next_attempt_at')->nullable(); // backoff after 429/503
 
             $table->timestamp('submitted_at')->nullable();
             $table->timestamp('started_at')->nullable();
@@ -58,6 +59,7 @@ return new class extends Migration
 
             $table->unique(['user_id', 'idempotency_key']);
             $table->index(['user_id', 'created_at']);      // history page
+            $table->index(['status', 'created_at']);       // pump: oldest pending first (FIFO)
             $table->index(['status', 'updated_at']);       // reconciler: stuck in-flight rows
             $table->index(['completed_at']);               // daily report (billed on completion day)
             $table->index(['api_key_id', 'completed_at']); // per-key reconciliation vs GET /v1/usage
