@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -39,8 +40,11 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user()?->only(['id', 'name', 'email', 'email_verified_at']),
+                'isAdmin' => (bool) $request->user()?->loadMissing('userType')->isAdmin(),
+                'balance' => $request->user() ? Money::format($request->user()->balance_nano, 2) : null,
             ],
+            'flash' => fn () => $request->session()->get('flash'),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

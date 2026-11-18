@@ -13,6 +13,9 @@ return [
     // Users pay provider cost + markup. Basis points: 2500 = 25%.
     'markup_bps' => (int) env('PIXELFORGE_MARKUP_BPS', 2500),
 
+    // Fake credits every new account starts with (USD, decimal string).
+    'welcome_credit_usd' => env('PIXELFORGE_WELCOME_CREDIT_USD', '2.00'),
+
     // Provider limits (per account, across keys).
     'max_concurrent' => (int) env('PIXELFORGE_MAX_CONCURRENT', 3),
     'max_per_minute' => (int) env('PIXELFORGE_MAX_PER_MINUTE', 55), // a little under 60 for polling headroom
