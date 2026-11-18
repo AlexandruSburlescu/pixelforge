@@ -40,7 +40,7 @@ return [
     'use_notifications' => true,
     'use_database_notifications' => true,
     'use_routes' => true,
-    'use_profile' => true,
+    'use_profile' => false, // profile & password live in the app's own settings (Fortify)
 
     // Routing
     'domain' => env('MOONSHINE_DOMAIN'),
@@ -73,10 +73,11 @@ return [
     // Authentication and profile
     'auth' => [
         'enabled' => true,
-        'guard' => 'moonshine',
-        'model' => MoonshineUser::class,
+        'guard' => 'web', // one session for the app and the admin
+        'model' => App\Models\User::class,
         'middleware' => [
             Authenticate::class,
+            App\Http\Middleware\EnsureUserType::class.':admin',
         ],
         'pipelines' => [],
     ],
@@ -86,7 +87,7 @@ return [
         'username' => 'email',
         'password' => 'password',
         'name' => 'name',
-        'avatar' => 'avatar',
+        'avatar' => '',
     ],
 
     // Layout, palette, pages, forms

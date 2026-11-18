@@ -38,11 +38,10 @@ class UserType extends Model
         return $this->hasMany(User::class);
     }
 
-    /** Level of a type by slug, cached for the request. */
+    /** Level of a type by slug (unknown slug = unreachable). One query per request. */
     public static function levelOf(string $slug): int
     {
-        static $levels = null;
-        $levels ??= static::query()->pluck('level', 'slug')->all();
+        $levels = once(fn () => static::query()->pluck('level', 'slug')->all());
 
         return (int) ($levels[$slug] ?? PHP_INT_MAX);
     }
