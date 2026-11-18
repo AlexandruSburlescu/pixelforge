@@ -16,7 +16,8 @@ class HandleAppearance
      */
     public function handle(Request $request, Closure $next): Response
     {
-        View::share('appearance', $request->cookie('appearance') ?? 'system');
+        // Dark by default, like Pixelforge; users can still switch in settings.
+        View::share('appearance', $request->cookie('appearance') ?? 'dark');
 
         return $next($request);
     }

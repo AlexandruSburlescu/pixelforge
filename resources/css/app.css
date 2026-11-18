@@ -141,3 +141,33 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Pixelforge × PromptEdit: near-black, white type, mono details, one warm accent. */
+@theme inline {
+    --color-ember: var(--ember);
+    --color-ember-foreground: var(--ember-foreground);
+    --font-mono:
+        ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Code', Menlo,
+        Consolas, monospace;
+}
+
+:root {
+    --ember: oklch(0.66 0.17 48);
+    --ember-foreground: oklch(0.99 0 0);
+}
+
+.dark {
+    --background: oklch(0.13 0 0);
+    --card: oklch(0.16 0 0);
+    --ember: oklch(0.78 0.15 62);
+    --ember-foreground: oklch(0.15 0 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

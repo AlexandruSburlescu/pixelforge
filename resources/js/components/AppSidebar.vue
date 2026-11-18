@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { BookOpen, FolderGit2, LayoutGrid } from '@lucide/vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { BookOpen, Coins, FolderGit2, History, ImagePlus, ShieldCheck } from '@lucide/vue';
+import { computed } from 'vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -14,29 +15,24 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
-import type { NavItem } from '@/types';
+import { index as creditsIndex } from '@/routes/credits';
+import { create as generate, index as history } from '@/routes/generations';
+import type { Auth, NavItem } from '@/types';
+
+const page = usePage();
+const auth = computed(() => page.props.auth as Auth);
 
 const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
+    { title: 'Generate', href: generate(), icon: ImagePlus },
+    { title: 'History', href: history(), icon: History },
+    { title: 'Credits', href: creditsIndex(), icon: Coins },
 ];
 
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
-    },
-];
+const footerNavItems = computed<NavItem[]>(() => [
+    ...(auth.value.isAdmin ? [{ title: 'Admin', href: '/admin', icon: ShieldCheck }] : []),
+    { title: 'Pixelforge API docs', href: 'https://pixelforge.promptedit.dev/docs', icon: BookOpen },
+    { title: 'Source code', href: 'https://github.com/', icon: FolderGit2 },
+]);
 </script>
 
 <template>
@@ -45,7 +41,7 @@ const footerNavItems: NavItem[] = [
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
+                        <Link :href="generate()">
                             <AppLogo />
                         </Link>
                     </SidebarMenuButton>
@@ -58,6 +54,13 @@ const footerNavItems: NavItem[] = [
         </SidebarContent>
 
         <SidebarFooter>
+            <Link
+                :href="creditsIndex()"
+                class="mx-2 flex items-center justify-between rounded-lg border px-3 py-2 text-xs group-data-[collapsible=icon]:hidden hover:border-ember"
+            >
+                <span class="text-muted-foreground">Balance</span>
+                <span class="font-mono text-sm tabular-nums">{{ auth.balance }}</span>
+            </Link>
             <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>

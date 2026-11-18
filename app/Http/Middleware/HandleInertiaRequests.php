@@ -44,7 +44,6 @@ class HandleInertiaRequests extends Middleware
                 'isAdmin' => (bool) $request->user()?->loadMissing('userType')->isAdmin(),
                 'balance' => $request->user() ? Money::format($request->user()->balance_nano, 2) : null,
             ],
-            'flash' => fn () => $request->session()->get('flash'),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

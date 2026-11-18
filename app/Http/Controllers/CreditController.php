@@ -53,6 +53,8 @@ class CreditController extends Controller
             "Bought \${$data['amount']} of credits (test purchase, no payment taken)",
         );
 
-        return back()->with('flash', ['type' => 'success', 'message' => "Added \${$data['amount']} of credits."]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => "Added \${$data['amount']} of credits."]);
+
+        return back();
     }
 }

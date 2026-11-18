@@ -46,11 +46,12 @@ class GenerationController extends Controller
             return back()->withErrors(['prompt' => 'Pricing is unavailable right now, so nothing was submitted. Please try again shortly.'])->withInput();
         }
 
-        return to_route('generations.create')->with('flash', [
+        Inertia::flash('toast', [
             'type' => 'success',
             'message' => 'Queued. Up to '.Money::format($generation->hold_nano).' is on hold until it finishes.',
-            'generation_id' => $generation->id,
         ]);
+
+        return to_route('generations.create');
     }
 
     public function index(Request $request): Response
