@@ -66,6 +66,16 @@ const quote = computed(() => {
 const creditsError = computed(() => (form.errors as Record<string, string | undefined>).credits);
 const balanceText = computed(() => (page.props.auth as { balance: string | null }).balance);
 
+// Same rule as the server: you need the maximum possible charge available.
+// The server re-checks on submit; this just tells you before you try.
+const shortfall = computed<bigint | null>(() => {
+    const raw = (page.props.auth as { balanceNano: string | null }).balanceNano;
+    if (!quote.value || raw === null) return null;
+    const missing = quote.value.charge.max - BigInt(raw);
+
+    return missing > 0n ? missing : null;
+});
+
 function addReference() {
     if (form.reference_images.length < MAX_REFS) form.reference_images.push('');
 }
@@ -217,7 +227,13 @@ const tryKeywords = ['[succeed]', '[fail]', '[slow]', '[duplicate]', '[overloade
                     <Link :href="creditsIndex()" class="font-medium underline">Buy credits</Link>
                 </div>
 
-                <Button class="mt-4 w-full bg-ember text-ember-foreground hover:bg-ember/90" :disabled="form.processing || promptLength === 0" @click="submit">
+                <div v-if="shortfall && !creditsError" class="mt-3 rounded-md border border-ember/40 bg-ember/10 p-2 text-xs" role="status">
+                    Not enough credits for the highest possible price: {{ formatNano(shortfall) }} short.
+                    Pick a lower quality or
+                    <Link :href="creditsIndex()" class="font-medium text-ember underline">buy credits</Link>.
+                </div>
+
+                <Button class="mt-4 w-full bg-ember text-ember-foreground hover:bg-ember/90" :disabled="form.processing || promptLength === 0 || shortfall !== null" @click="submit">
                     <Loader2 v-if="form.processing" class="animate-spin" />
                     <ImagePlus v-else />
                     Generate

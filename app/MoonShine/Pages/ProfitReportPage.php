@@ -95,6 +95,17 @@ class ProfitReportPage extends Page
                 Text::make('Profit', 'profit', $usd('profit')),
             ], $byUser->all())->withNotFound(),
 
+            Heading::make('By day and user')->h(3),
+            TableBuilder::make([
+                Text::make('Day', 'date'),
+                Text::make('User', 'user'),
+                Text::make('Succeeded', 'generations'),
+                Text::make('Failed (free)', 'failed'),
+                Text::make('Charged', 'charged', $usd('charged')),
+                Text::make('Pixelforge cost', 'cost', $usd('cost')),
+                Text::make('Profit', 'profit', $usd('profit')),
+            ], $report->byDayAndUser($from, $to)->all())->withNotFound(),
+
             Heading::make('Pixelforge usage last synced: '.($lastSync ?? 'never').' (hourly; run php artisan pixelforge:sync-usage for now)')->h(6),
         ];
     }

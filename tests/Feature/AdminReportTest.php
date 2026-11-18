@@ -62,6 +62,9 @@ class AdminReportTest extends TestCase
 
         $user = app(ProfitReport::class)->byUser(now()->subDay(), now())->first();
         $this->assertSame($generation->charge_nano, $user['charged']);
+
+        $cell = app(ProfitReport::class)->byDayAndUser(now()->subDay(), now())->sole();
+        $this->assertSame(['2026-11-18', $generation->charge_nano, $generation->provider_cost_nano], [$cell['date'], $cell['charged'], $cell['cost']]);
     }
 
     public function test_admin_pages_render_for_admins_only(): void
@@ -96,6 +99,16 @@ class AdminReportTest extends TestCase
             ->assertDontSee('pf_test_key_abcd')
             ->assertDontSee('whsec_test_secret')
             ->assertSee('…abcd');
+    }
+
+    public function test_reviewer_command_makes_a_read_only_admin(): void
+    {
+        $this->artisan('app:create-reviewer', ['email' => 'reviewer@example.com'])->assertSuccessful();
+
+        $reviewer = User::where('email', 'reviewer@example.com')->sole();
+        $this->assertSame(UserType::ADMIN, $reviewer->userType->slug);
+        $this->actingAs($reviewer)->get('/admin')->assertOk();
+        $this->actingAs($reviewer)->get('/admin/resource/api-key-resource/api-key-index-page')->assertForbidden();
     }
 
     public function test_plain_admins_cannot_open_api_keys(): void

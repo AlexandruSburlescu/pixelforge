@@ -99,6 +99,38 @@ class ProfitReport
             ]);
     }
 
+    /**
+     * Every (UTC day, user) pair with activity: the cross-tab of byDay and byUser.
+     *
+     * @return Collection<int, array{date: string, user: string, generations: int, failed: int, charged: int, cost: int, profit: int}>
+     */
+    public function byDayAndUser(CarbonInterface $from, CarbonInterface $to): Collection
+    {
+        return Generation::query()
+            ->join('users', 'users.id', '=', 'generations.user_id')
+            ->whereIn('generations.api_key_id', $this->keyIds())
+            ->whereIn('generations.status', [GenerationStatus::Succeeded, GenerationStatus::Failed])
+            ->whereBetween('generations.completed_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+            ->groupBy('day', 'users.id', 'users.email')
+            ->selectRaw("date(generations.completed_at) as day, users.email as user,
+                sum(case when generations.status = 'succeeded' then 1 else 0 end) as generations,
+                sum(case when generations.status = 'failed' then 1 else 0 end) as failed,
+                sum(case when generations.status = 'succeeded' then generations.charge_nano else 0 end) as charged,
+                sum(case when generations.status = 'succeeded' then generations.provider_cost_nano else 0 end) as cost")
+            ->orderByDesc('day')
+            ->orderByDesc('charged')
+            ->get()
+            ->map(fn ($r) => [
+                'date' => (string) $r->day,
+                'user' => (string) $r->user,
+                'generations' => (int) $r->generations,
+                'failed' => (int) $r->failed,
+                'charged' => (int) $r->charged,
+                'cost' => (int) $r->cost,
+                'profit' => (int) $r->charged - (int) $r->cost,
+            ]);
+    }
+
     /** Only this environment's keys: other environments report separately. */
     private function keyIds(): Collection
     {

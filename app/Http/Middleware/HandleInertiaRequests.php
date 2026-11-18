@@ -43,6 +43,8 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user()?->only(['id', 'name', 'email', 'email_verified_at']),
                 'isAdmin' => (bool) $request->user()?->loadMissing('userType')->isAdmin(),
                 'balance' => $request->user() ? Money::format($request->user()->balance_nano, 2) : null,
+                // Exact integer nano-USD as a string (safe for BigInt), for "can I afford this?" checks.
+                'balanceNano' => $request->user() ? (string) $request->user()->balance_nano : null,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

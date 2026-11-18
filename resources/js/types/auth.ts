@@ -16,6 +16,7 @@ export type Auth = {
     user: User;
     isAdmin: boolean;
     balance: string | null;
+    balanceNano: string | null;
 };
 
 /* @chisel-passkeys */
