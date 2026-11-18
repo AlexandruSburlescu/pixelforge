@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\Pricing\PricingService;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
@@ -15,7 +17,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(PricingService::class, fn () => new PricingService(
+            (int) config('pixelforge.markup_bps'),
+        ));
     }
 
     /**
@@ -32,6 +36,9 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        // Catch N+1 queries, silently dropped attributes and typos in development.
+        Model::shouldBeStrict(! app()->isProduction());
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),

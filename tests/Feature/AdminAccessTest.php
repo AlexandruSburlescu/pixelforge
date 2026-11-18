@@ -55,12 +55,20 @@ class AdminAccessTest extends TestCase
 
     public function test_user_type_and_balance_cannot_be_mass_assigned(): void
     {
-        $user = User::create([
+        // Strict mode (non-production) refuses loudly instead of silently dropping.
+        $this->expectException(\Illuminate\Database\Eloquent\MassAssignmentException::class);
+
+        User::create([
             'name' => 'x', 'email' => 'x@example.com', 'password' => 'secret-password',
             'user_type_id' => 3, 'balance_nano' => 999,
         ]);
+    }
 
-        $this->assertSame(1, $user->fresh()->user_type_id);
-        $this->assertSame(0, $user->fresh()->balance_nano);
+    public function test_new_users_start_as_user_type_with_zero_balance(): void
+    {
+        $user = User::factory()->create()->fresh();
+
+        $this->assertSame(UserType::USER, $user->userType->slug);
+        $this->assertSame(0, $user->balance_nano);
     }
 }
