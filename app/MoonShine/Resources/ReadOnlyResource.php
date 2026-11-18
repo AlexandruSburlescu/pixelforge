@@ -6,6 +6,7 @@ namespace App\MoonShine\Resources;
 
 use App\Models\User;
 use MoonShine\Laravel\MoonShineAuth;
+use MoonShine\Laravel\Pages\Crud\IndexPage;
 use MoonShine\Laravel\Resources\ModelResource;
 use MoonShine\Support\Enums\Ability;
 use MoonShine\Support\Enums\Action;
@@ -17,7 +18,8 @@ use MoonShine\Support\ListOf;
  * Admins can look; nobody can change.
  *
  * @template TModel of \Illuminate\Database\Eloquent\Model
- * @extends ModelResource<TModel, \MoonShine\Laravel\Pages\Crud\IndexPage, null, null>
+ *
+ * @extends ModelResource<TModel, IndexPage, null, null>
  */
 abstract class ReadOnlyResource extends ModelResource
 {

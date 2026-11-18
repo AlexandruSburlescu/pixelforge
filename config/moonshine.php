@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\EnsureUserType;
+use App\Models\User;
+use App\MoonShine\Layouts\MoonShineLayout;
+use App\MoonShine\Pages\ProfitReportPage;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
@@ -16,9 +20,6 @@ use MoonShine\Crud\Forms\LoginForm;
 use MoonShine\Laravel\Exceptions\MoonShineNotFoundException;
 use MoonShine\Laravel\Http\Middleware\Authenticate;
 use MoonShine\Laravel\Http\Middleware\ChangeLocale;
-use MoonShine\Laravel\Layouts\AppLayout;
-use MoonShine\Laravel\Models\MoonshineUser;
-use MoonShine\Laravel\Pages\Dashboard;
 use MoonShine\Laravel\Pages\ErrorPage;
 use MoonShine\Laravel\Pages\LoginPage;
 use MoonShine\Laravel\Pages\ProfilePage;
@@ -74,10 +75,10 @@ return [
     'auth' => [
         'enabled' => true,
         'guard' => 'web', // one session for the app and the admin
-        'model' => App\Models\User::class,
+        'model' => User::class,
         'middleware' => [
             Authenticate::class,
-            App\Http\Middleware\EnsureUserType::class.':admin',
+            EnsureUserType::class.':admin',
         ],
         'pipelines' => [],
     ],
@@ -91,8 +92,8 @@ return [
     ],
 
     // Layout, palette, pages, forms
-    'layout' => App\MoonShine\Layouts\MoonShineLayout::class,
-    'palette' => MoonShine\ColorManager\Palettes\OrangePalette::class,
+    'layout' => MoonShineLayout::class,
+    'palette' => OrangePalette::class,
 
     'forms' => [
         'login' => LoginForm::class,
@@ -100,7 +101,7 @@ return [
     ],
 
     'pages' => [
-        'dashboard' => App\MoonShine\Pages\ProfitReportPage::class, // the report is the admin home
+        'dashboard' => ProfitReportPage::class, // the report is the admin home
         'profile' => ProfilePage::class,
         'login' => LoginPage::class,
         'error' => ErrorPage::class,

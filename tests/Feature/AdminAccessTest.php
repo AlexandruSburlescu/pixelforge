@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\UserType;
+use Illuminate\Database\Eloquent\MassAssignmentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -56,7 +57,7 @@ class AdminAccessTest extends TestCase
     public function test_user_type_and_balance_cannot_be_mass_assigned(): void
     {
         // Strict mode (non-production) refuses loudly instead of silently dropping.
-        $this->expectException(\Illuminate\Database\Eloquent\MassAssignmentException::class);
+        $this->expectException(MassAssignmentException::class);
 
         User::create([
             'name' => 'x', 'email' => 'x@example.com', 'password' => 'secret-password',

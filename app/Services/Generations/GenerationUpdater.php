@@ -41,7 +41,7 @@ class GenerationUpdater
         }
 
         $changed = DB::transaction(function () use ($generation, $object, $next) {
-            /** @var Generation $row  fresh, locked copy: decisions are made on committed state */
+            /** @var Generation $row fresh, locked copy: decisions are made on committed state */
             $row = Generation::whereKey($generation->id)->lockForUpdate()->firstOrFail();
 
             // Link the provider id even if the status doesn't move (e.g. webhook beat the POST).

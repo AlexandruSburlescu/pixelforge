@@ -7,12 +7,13 @@ use App\Models\Generation;
 use App\Services\Generations\GenerationUpdater;
 use App\Services\Pixelforge\PixelforgeClientFactory;
 use App\Services\Pixelforge\PixelforgeException;
+use App\Services\Pixelforge\RequestBudget;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldBeUniqueUntilProcessing;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use App\Services\Pixelforge\RequestBudget;
 use Throwable;
 
 /**
@@ -158,7 +159,7 @@ class PumpGenerationQueue implements ShouldBeUniqueUntilProcessing, ShouldQueue
         $next = Generation::where('status', GenerationStatus::Pending)->min('next_attempt_at');
 
         if ($next) {
-            self::dispatch()->delay(max(now()->addSecond(), \Carbon\CarbonImmutable::parse($next)));
+            self::dispatch()->delay(max(now()->addSecond(), CarbonImmutable::parse($next)));
         }
     }
 }

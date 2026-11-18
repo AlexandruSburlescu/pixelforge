@@ -6,6 +6,7 @@ use App\Models\ApiKey;
 use App\Models\User;
 use App\Services\Credits\CreditService;
 use App\Support\Money;
+use Illuminate\Support\Str;
 
 trait FakesPixelforge
 {
@@ -81,7 +82,7 @@ trait FakesPixelforge
             'size' => '1024x1024',
             'quality' => 'high',
             'reference_images' => [],
-            'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+            'idempotency_key' => (string) Str::uuid(),
         ], $overrides);
     }
 }

@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $api_key_id
- * @property string $date  Y-m-d (UTC)
+ * @property string $date Y-m-d (UTC)
  * @property int $generations
  * @property int $input_text_tokens
  * @property int $input_image_tokens
