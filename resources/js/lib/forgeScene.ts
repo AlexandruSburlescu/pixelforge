@@ -65,11 +65,13 @@ export function mount(canvas: HTMLCanvasElement, accent: string): () => void {
         uniforms: {
             uTime: { value: 0 },
             uSize: { value: 4.0 * renderer.getPixelRatio() },
+            uDepth: { value: 9.0 },
             uAccent: { value: new Color(accent) },
         },
         vertexShader: /* glsl */ `
             uniform float uTime;
             uniform float uSize;
+            uniform float uDepth;
             attribute vec3 aCloud;
             attribute float aSeed;
             attribute float aShade;
@@ -85,7 +87,8 @@ export function mount(canvas: HTMLCanvasElement, accent: string): () => void {
                 vShade = aShade;
                 vForm = form;
                 vec4 mv = modelViewMatrix * vec4(p, 1.0);
-                gl_PointSize = uSize * (8.0 / -mv.z);
+                // uSize is the cell size at the grid's depth; perspective scales the rest.
+                gl_PointSize = uSize * (uDepth / -mv.z);
                 gl_Position = projectionMatrix * mv;
             }
         `,
@@ -119,9 +122,15 @@ export function mount(canvas: HTMLCanvasElement, accent: string): () => void {
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        // Wide screens: keep the picture to the right of the headline, not under it.
-        points.position.x = camera.aspect > 1.3 ? Math.min(3.4, camera.aspect * 1.6) : 0;
-        canvas.style.opacity = camera.aspect > 1.3 ? '' : '0.45';
+        // Fit the picture to the frame whatever its shape.
+        camera.position.z = camera.aspect < 1 ? 9 / camera.aspect : 9;
+
+        // Size each pixel from the on-screen grid cell so they never overlap
+        // (overlap reads as a plaid pattern on small frames).
+        const visibleHeight = 2 * camera.position.z * Math.tan((camera.fov * Math.PI) / 360);
+        const cellPx = ((h / visibleHeight) * 5) / SIDE;
+        material.uniforms.uSize.value = cellPx * 0.78 * renderer.getPixelRatio();
+        material.uniforms.uDepth.value = camera.position.z;
     };
 
     let frame = 0;

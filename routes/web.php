@@ -2,9 +2,10 @@
 
 use App\Http\Controllers\CreditController;
 use App\Http\Controllers\GenerationController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+Route::get('/', WelcomeController::class)->name('home');
 
 // Email verification is not required: credits are fake and every account gets
 // the same small welcome balance, so an unverified account can't cost real money.

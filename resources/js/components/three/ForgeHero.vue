@@ -2,9 +2,9 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 /**
- * Three.js never blocks the first paint: the scene module (and three itself) is
- * fetched only after the page is idle, and skipped entirely for reduced motion,
- * data-saver connections or browsers without WebGL. A CSS grid stands in.
+ * Fills its container with the Three.js "pixel forge". Three is fetched only
+ * after the page is idle, and skipped for reduced motion, data-saver or no
+ * WebGL; a static pixel pattern (pure CSS) stands in, so the frame never looks empty.
  */
 const canvas = ref<HTMLCanvasElement | null>(null);
 const ready = ref(false);
@@ -60,23 +60,23 @@ function toHex(color: string): string {
 </script>
 
 <template>
-    <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div class="hero-grid absolute inset-0" />
+    <div class="absolute inset-0" aria-hidden="true">
+        <div class="pixel-fallback absolute inset-0 transition-opacity duration-1000" :class="ready ? 'opacity-0' : 'opacity-100'" />
         <canvas
             ref="canvas"
             class="absolute inset-0 size-full transition-opacity duration-1000"
             :class="ready ? 'opacity-100' : 'opacity-0'"
         />
-        <div class="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent" />
     </div>
 </template>
 
 <style scoped>
-.hero-grid {
+/* Static stand-in: a soft glowing pixel grid, same idea as the 3D scene. */
+.pixel-fallback {
     background-image:
-        linear-gradient(color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px),
-        linear-gradient(90deg, color-mix(in oklch, var(--foreground) 5%, transparent) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+        radial-gradient(circle at 50% 42%, color-mix(in oklch, var(--ember) 55%, transparent) 0, transparent 38%),
+        radial-gradient(circle, color-mix(in oklch, var(--foreground) 22%, transparent) 1px, transparent 1.5px);
+    background-size: 100% 100%, 9px 9px;
+    mask-image: radial-gradient(circle at 50% 50%, black 45%, transparent 72%);
 }
 </style>
