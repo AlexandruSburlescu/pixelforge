@@ -31,7 +31,7 @@ const mainNavItems: NavItem[] = [
 const footerNavItems = computed<NavItem[]>(() => [
     ...(auth.value.isAdmin ? [{ title: 'Admin', href: '/admin', icon: ShieldCheck }] : []),
     { title: 'Pixelforge API docs', href: 'https://pixelforge.promptedit.dev/docs', icon: BookOpen },
-    { title: 'Source code', href: 'https://github.com/', icon: FolderGit2 },
+    { title: 'Source code', href: 'https://github.com/AlexandruSburlescu/pixelforge', icon: FolderGit2 },
 ]);
 </script>
 

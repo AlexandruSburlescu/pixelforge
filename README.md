@@ -66,7 +66,7 @@ Tests reproduce all three worked examples in the Pixelforge docs exactly (`0.373
 ## Run it locally
 
 ```bash
-git clone <this repo> pixelforge && cd pixelforge
+git clone https://github.com/AlexandruSburlescu/pixelforge.git && cd pixelforge
 composer install
 npm install
 cp .env.example .env && php artisan key:generate
