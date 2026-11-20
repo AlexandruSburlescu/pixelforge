@@ -20,6 +20,10 @@ export default defineConfig({
                         weight,
                     })),
                     optimizedFallbacks: false,
+                    // Preloaded, so on normal connections it's ready for the first
+                    // paint; on slow ones we keep the fallback instead of a late swap
+                    // that would repaint the hero text (and push LCP back).
+                    display: 'optional',
                 }),
             ],
         }),
