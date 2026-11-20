@@ -1,0 +1,48 @@
+# Copy to .github/workflows/tests.yml (via GitHub's web editor if your git
+# credentials lack the `workflow` scope). Runs on every push and pull request.
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: bcmath, intl, pdo_sqlite, sqlite3, mbstring
+          tools: composer:v2
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          npm ci
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Type check (Vue + TS)
+        run: npx vue-tsc --noEmit
+
+      - name: Tests (money, idempotency, webhooks, limits)
+        run: php artisan test
+
+      - name: Build (client + SSR)
+        run: npm run build:ssr
