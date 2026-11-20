@@ -3,7 +3,7 @@ import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import laravel from 'laravel-vite-plugin';
-import { bunny } from 'laravel-vite-plugin/fonts';
+import { local } from 'laravel-vite-plugin/fonts';
 import { defineConfig, lazyPlugins } from 'vite-plus';
 
 export default defineConfig({
@@ -12,8 +12,14 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', {
-                    weights: [400, 500, 600],
+                // Self-hosted woff2 only (Latin). The remote provider also emits
+                // woff faces without a unicode-range, so browsers fetched both.
+                local('Instrument Sans', {
+                    variants: [400, 500, 600].map((weight) => ({
+                        src: `resources/fonts/instrument-sans-${weight}-normal.woff2`,
+                        weight,
+                    })),
+                    optimizedFallbacks: false,
                 }),
             ],
         }),

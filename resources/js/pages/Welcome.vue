@@ -38,7 +38,13 @@ const tierNote: Record<string, string> = {
 </script>
 
 <template>
-    <Head title="Forge images, pay exactly what they cost" />
+    <Head title="Forge images, pay exactly what they cost">
+        <meta
+            head-key="description"
+            name="description"
+            content="Generate images and pay exactly what they cost: see the price range before you click, get charged for the tokens actually used, and pay nothing if it fails."
+        />
+    </Head>
 
     <a href="#main" class="sr-only z-50 rounded bg-background px-3 py-2 focus:not-sr-only focus:fixed focus:top-3 focus:left-3">Skip to content</a>
 
