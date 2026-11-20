@@ -2,7 +2,7 @@
 
 An image-generation app on top of **Pixelforge**, the simulated provider from the PromptEdit take-home. Users sign in, write a prompt, see what it will cost, and pay Pixelforge's cost plus 25%, recorded to the nano-dollar.
 
-**Live:** https://pixelforge.heptalex.ro · **Admin:** `/admin`
+**Live:** https://pixelforge.heptalex.ro · **Admin:** https://pixelforge.heptalex.ro/admin (a reviewer login is sent with the application)
 
 Laravel 13 · Inertia 3 + Vue 3 · Tailwind 4 · Three.js (landing only, lazy) · MoonShine 4 (admin) · SQLite
 
@@ -27,6 +27,13 @@ Laravel 13 · Inertia 3 + Vue 3 · Tailwind 4 · Three.js (landing only, lazy) �
 - **Never twice.** The ledger has `UNIQUE(generation_id, type)`. A duplicated webhook, a replay, a poll and a webhook racing each other: whichever comes second hits the constraint and changes nothing.
 
 Tests reproduce all three worked examples in the Pixelforge docs exactly (`0.373875000`, `0.305510000`, `0.169080000`).
+
+### Verified against the real Pixelforge
+
+| Run | What was checked | Result |
+|---|---|---|
+| Local, development key | `[succeed]`, reference image, `[fail]`, `[blocked]`, `[overloaded]`, `[slow]` | Every charge inside its estimate; failures free; overloaded retried 6× on `Retry-After`, then refunded; `GET /v1/usage` = our records (4 generations, `$0.503107500`) |
+| Production, deployed key | `[duplicate]` + succeed / fail, plus a normal one, finished by **webhooks only** | Each duplicated event stored and applied once; one settle/refund per generation; `GET /v1/usage` = our records (2 generations, `$0.090807500`) |
 
 ## Robustness: how it copes with Pixelforge
 
@@ -86,12 +93,29 @@ php vendor/bin/phpunit   # (php artisan test also works on a standard PHP instal
 ```
 Covers pricing maths, the whole flow with a faked Pixelforge (limits, retries, refunds), webhook signatures/duplicates/ordering, reconciliation, usage sync vs report, credits, admin access.
 
+## Deployment (pixelforge.heptalex.ro)
+
+Ubuntu 24.04, Nginx + PHP-FPM 8.4 (OPcache), Let's Encrypt. Three small systemd services, all as `www-data`:
+
+- `pixelforge-queue`: `queue:work` (webhooks, the pump, image copies)
+- `pixelforge-ssr`: Inertia server-side rendering (`node bootstrap/ssr/app.js`); if it's down, pages fall back to client rendering
+- cron: `schedule:run` every minute (pump/reconcile safety nets, hourly usage sync, pruning)
+
+`bin/deploy.sh` ships a release: it refuses a dirty tree, runs the type check, tests and the client + SSR build, then uploads, migrates, caches, restarts and smoke-tests (pages, SSR, unsigned webhook → 400).
+
+Keys live only in the database, encrypted: `sudo -u www-data php artisan pixelforge:key` on each environment. `.env` holds no secrets besides `APP_KEY`.
+
+Speed (Lighthouse, landing page): desktop 100 / 100 / 100, LCP 0.5 s; mobile performance 99. SSR, self-hosted woff2 fonts, immutable caching on hashed assets, Three.js loaded only after the page has loaded and gone idle.
+
 ## Decisions & trade-offs
 
 - **SQLite** as requested: WAL mode, `busy_timeout`, `IMMEDIATE` transactions so writers queue instead of erroring. Writes are short and few per generation. Switching to MySQL/Postgres is an `.env` change; `lockForUpdate()` is already in place for them.
 - **Polling, not WebSockets**, for live status: every 2s only for in-flight ids, paused when the tab is hidden. No extra infrastructure.
 - **Email verification isn't required** to generate: credits are fake and capped by the welcome amount.
-- **Three.js only on the landing page**, loaded after idle and skipped for reduced motion, data-saver or no WebGL, so it never affects load time.
+- **Three.js only on the landing page**, loaded after the page has loaded and gone idle, and skipped for reduced motion, data-saver or no WebGL, so it never affects load time.
+- **"Try again"** on failed generations creates a new generation with the same settings (new estimate, new hold); its idempotency key is derived from the failed one, so a double click retries once. Not offered for content-policy rejections.
+- **Reviewer access:** `php artisan app:create-reviewer <email>` makes a read-only admin login (report and audit tables; API keys and user types stay super-admin only).
+- **Landing page prices** are computed by the same `PricingService` that charges users, from live `GET /v1/pricing`.
 - **Known advisory:** `npm audit` reports a ReDoS in `picomatch`, used only by build tooling (never shipped to browsers); the suggested fix downgrades the Laravel Vite plugin, so it's accepted until upstream updates.
 
 See [`docs/PLAN.md`](docs/PLAN.md) for the original build plan.
