@@ -3,13 +3,15 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 /**
  * Fills its container with the Three.js "pixel forge". Three is fetched only
- * after the page is idle, and skipped for reduced motion, data-saver or no
+ * after the page has loaded and gone idle, and skipped for reduced motion, data-saver or no
  * WebGL; a static pixel pattern (pure CSS) stands in, so the frame never looks empty.
  */
 const canvas = ref<HTMLCanvasElement | null>(null);
 const ready = ref(false);
 let dispose: (() => void) | null = null;
-let idleHandle: number | null = null;
+let timer: number | null = null;
+let idle: number | null = null;
+let onLoad: (() => void) | null = null;
 
 function shouldAnimate(): boolean {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -36,8 +38,21 @@ onMounted(() => {
         requestAnimationFrame(() => (ready.value = true));
     };
 
+    // Only after the page has fully loaded and settled: three (~130 KB) must
+    // never compete with the first paint or hydration, even on slow phones.
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
-    idleHandle = ric ? ric(() => void start(), { timeout: 1500 }) : window.setTimeout(() => void start(), 300);
+    const schedule = () => {
+        const wait = window.setTimeout(() => {
+            idleHandle = ric ? ric(() => void start(), { timeout: 2000 }) : window.setTimeout(() => void start(), 0);
+        }, 800);
+        idleHandle = wait;
+    };
+
+    if (document.readyState === 'complete') {
+        schedule();
+    } else {
+        window.addEventListener('load', schedule, { once: true });
+    }
 });
 
 onBeforeUnmount(() => {
