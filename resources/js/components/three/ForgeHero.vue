@@ -42,23 +42,26 @@ onMounted(() => {
     // never compete with the first paint or hydration, even on slow phones.
     const ric = (window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number }).requestIdleCallback;
     const schedule = () => {
-        const wait = window.setTimeout(() => {
-            idleHandle = ric ? ric(() => void start(), { timeout: 2000 }) : window.setTimeout(() => void start(), 0);
+        onLoad = null;
+        timer = window.setTimeout(() => {
+            timer = null;
+            if (ric) idle = ric(() => void start(), { timeout: 2000 });
+            else void start();
         }, 800);
-        idleHandle = wait;
     };
 
     if (document.readyState === 'complete') {
         schedule();
     } else {
-        window.addEventListener('load', schedule, { once: true });
+        onLoad = schedule;
+        window.addEventListener('load', onLoad, { once: true });
     }
 });
 
 onBeforeUnmount(() => {
-    if (idleHandle !== null) {
-        (window.cancelIdleCallback ?? window.clearTimeout)(idleHandle);
-    }
+    if (onLoad) window.removeEventListener('load', onLoad);
+    if (timer !== null) window.clearTimeout(timer);
+    if (idle !== null) window.cancelIdleCallback?.(idle);
     dispose?.();
 });
 
